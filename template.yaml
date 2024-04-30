@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: |
+  servicio-locaciones-java17
+  Sample SAM Template for servicio-locaciones-java17
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+Parameters:
+  TableName:
+    Type: String
+    Default: location
+    Description: (Required) The name of the new DynamoDB table you want to create and save to. Minimum 3 characters
+    AllowedPattern: ^[A-Za-z]+$
+    ConstraintDescription: Required parameter. Must be characters only. No numbers allowed.
+  TableBooks:
+    Type: String
+    Default: book
+    AllowedPattern: ^[A-Za-z]+$
+    ConstraintDescription: Required parameter. Must be characters only. No numbers allowed.
+Resources:
+  ServiciosApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      Name: servicios-api-gateway
+  LocationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: LocationFunction
+      Handler: location.App::handleRequest
+      Runtime: java11
+      Architectures:
+        - arm64
+        # - x86_64
+      MemorySize: 512
+      Events:
+        ApiEvents:
+          Type: Api
+          Properties:
+            Path: /location
+            Method: GET
+            RestApiId: !Ref ServiciosApiGateway
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: location
+Outputs:
+  ServiciosApiGateway:
+    Description: API Gateway endpoint URL for Prod stage for Location function
+    Value: !Sub https://${ServiciosApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/location/
+  LocationFunction:
+    Description: Hello World Lambda Function ARN
+    Value: !GetAtt LocationFunction.Arn
+  LocationFunctionIamRole:
+    Description: Implicit IAM Role created for Location function
+    Value: !GetAtt LocationFunctionRole.Arn
